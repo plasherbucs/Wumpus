@@ -1,0 +1,128 @@
+﻿{
+  "Map": {
+    "room1": {
+      "Id": "room1",
+      "Name": "Cave Entrance",
+      "Description": "A dimly lit cave entrance with damp walls and the constant sound of water droplets echoing in the distance.",
+      "Connections": {
+        "north": "room2",
+        "east": "room3"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    },
+    "room2": {
+      "Id": "room2",
+      "Name": "Narrow Hallway",
+      "Description": "A narrow hallway that's hot and humid with echoing sounds bouncing off the walls.",
+      "Connections": {
+        "south": "room1",
+        "east": "room4",
+        "north": "room5"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    },
+    "room3": {
+      "Id": "room3",
+      "Name": "Crystal Chamber",
+      "Description": "A chamber filled with green glowing crystals that cast an eerie light throughout the space.",
+      "Connections": {
+        "west": "room1",
+        "east": "room6",
+        "south": "room7"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    },
+    "room4": {
+      "Id": "room4",
+      "Name": "Underground Lake",
+      "Description": "A vast underground lake with still water, pitch black except for a singular natural spotlight coming down in the center of the lake.",
+      "Connections": {
+        "west": "room2",
+        "east": "room8"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    },
+    "room5": {
+      "Id": "room5",
+      "Name": "Bat Lair",
+      "Description": "A high-ceilinged chamber with stalactites and a cascading waterfall pouring from an opening in the rock.",
+      "Connections": {
+        "south": "room2",
+        "east": "room9"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": true
+    },
+    "room6": {
+      "Id": "room6",
+      "Name": "Cloud Room",
+      "Description": "A room filled with clouds that can be walked on without falling through, giving the sensation of floating.",
+      "Connections": {
+        "west": "room3",
+        "south": "room10"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    },
+    "room7": {
+      "Id": "room7",
+      "Name": "Ancient Temple",
+      "Description": "As you enter, the clouds dissipate revealing an ancient gold temple that gleams even in the dim light.",
+      "Connections": {
+        "north": "room3",
+        "east": "room10"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    },
+    "room8": {
+      "Id": "room8",
+      "Name": "Sacred Waters",
+      "Description": "Water surrounds the temple and must be crossed with a boat. In the water, blue luminescent fish swim alongside giant whales.",
+      "Connections": {
+        "west": "room4",
+        "south": "room9"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    },
+    "room9": {
+      "Id": "room9",
+      "Name": "Temple Dock",
+      "Description": "A wooden dock where the boat pulls up to, allowing safe passage from the waters to solid ground.",
+      "Connections": {
+        "west": "room5",
+        "north": "room8",
+        "south": "room10"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    },
+    "room10": {
+      "Id": "room10",
+      "Name": "Wumpus Den",
+      "Description": "A large chamber with claw marks on the walls and a pair of red glowing eyes emitting from the darkness.",
+      "Connections": {
+        "north": "room6",
+        "west": "room7",
+        "east": "room9"
+      },
+      "HasWumpus": false,
+      "HasPit": false,
+      "HasBats": false
+    }
+  }
+}
