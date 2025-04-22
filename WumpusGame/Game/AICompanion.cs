@@ -12,7 +12,7 @@ namespace WumpusAdventure.Game
     public class AICompanion : Player
     {
         public string Personality { get; set; }
-        private string _ollamaModel = "llama3"; 
+        private string _ollamaModel = "phi3:mini"; 
         private string _ollamaEndpoint = "http://localhost:11434/api/generate"; 
 
         public AICompanion(string name, string currentRoomId) : base(name, currentRoomId)
@@ -79,8 +79,10 @@ namespace WumpusAdventure.Game
                     stream = false,
                     options = new
                     {
-                        temperature = 0.7,
-                        num_predict = 150
+                        temperature = 0.5f,
+                        num_predict = 100,
+                        top_p = 0.5,
+                        top_k = 20
                     }
                 };
 

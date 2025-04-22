@@ -59,7 +59,7 @@ namespace WumpusAdventure.Helpers
 
         public class AISettingsStorage
         {
-            public string? Model { get; set; } = "llama3";
+            public string? Model { get; set; } = "phi3:mini";
             public string? Endpoint { get; set; } = "http://localhost:11434/api/generate";
         }
     }
