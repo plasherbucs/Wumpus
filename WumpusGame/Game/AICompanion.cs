@@ -12,30 +12,21 @@ namespace WumpusAdventure.Game
     public class AICompanion : Player
     {
         public string Personality { get; set; }
-        private static string? _openAiApiKey = null;
+        private string _ollamaModel = "llama3"; 
+        private string _ollamaEndpoint = "http://localhost:11434/api/generate"; 
 
         public AICompanion(string name, string currentRoomId) : base(name, currentRoomId)
         {
             IsAI = true;
             Personality = "A wise and sometimes sarcastic guide who knows about the Wumpus.";
-        }
 
-        private string? GetOpenAIApiKey()
-        {
-            if (_openAiApiKey == null)
+            
+            var config = ConfigurationHelper.ReadConfiguration();
+            if (config?.AISettings != null)
             {
-                try
-                {
-                    var config = ConfigurationHelper.ReadConfiguration();
-                    _openAiApiKey = config?.Keys?.OpenAI;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error reading API key: {ex.Message}");
-                }
+                _ollamaModel = config.AISettings.Model ?? _ollamaModel;
+                _ollamaEndpoint = config.AISettings.Endpoint ?? _ollamaEndpoint;
             }
-
-            return _openAiApiKey;
         }
 
         public async Task<string> GetAdvice(GameState gameState)
@@ -54,14 +45,7 @@ namespace WumpusAdventure.Game
                 bool pitNearby = nearbyRooms.Exists(room => room.HasPit);
                 bool batsNearby = nearbyRooms.Exists(room => room.HasBats);
 
-                string? apiKey = GetOpenAIApiKey();
-
-                if (string.IsNullOrEmpty(apiKey))
-                {
-                    Console.WriteLine("Error: No OpenAI API key found. Please check your configuration.");
-                    return "ERROR: No OpenAI API key configured. I cannot provide advice.";
-                }
-
+                
                 StringBuilder context = new StringBuilder();
                 context.Append($"You are {Name}, {Personality}. ");
                 context.Append($"We are in {currentRoom.Name}: {currentRoom.Description}. ");
@@ -76,67 +60,85 @@ namespace WumpusAdventure.Game
 
                 context.Append("The player asks for your advice on what to do next. Provide a short, helpful suggestion.");
 
-                using (var httpClient = new HttpClient())
-                {
-                    httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
-
-                    var requestData = new
-                    {
-                        model = "gpt-4o-mini",
-                        messages = new[]
-                        {
-                            new { role = "system", content = context.ToString() },
-                            new { role = "user", content = "What should I do?" }
-                        },
-                        max_tokens = 150
-                    };
-
-                    var jsonContent = new StringContent(
-                        JsonSerializer.Serialize(requestData),
-                        Encoding.UTF8,
-                        "application/json");
-
-                    try
-                    {
-                        var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", jsonContent);
-                        var responseString = await response.Content.ReadAsStringAsync();
-
-                        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(responseString))
-                        {
-                            using (JsonDocument doc = JsonDocument.Parse(responseString))
-                            {
-                                JsonElement root = doc.RootElement;
-                                if (root.TryGetProperty("choices", out JsonElement choices) &&
-                                    choices.GetArrayLength() > 0)
-                                {
-                                    JsonElement firstChoice = choices[0];
-                                    if (firstChoice.TryGetProperty("message", out JsonElement message) &&
-                                        message.TryGetProperty("content", out JsonElement contentElement))
-                                    {
-                                        string? aiResponse = contentElement.GetString();
-                                        return aiResponse ?? "I'm not sure what to suggest right now.";
-                                    }
-                                }
-                                return "I couldn't interpret the API response correctly.";
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"API Error: {response.StatusCode}");
-                            Console.WriteLine(responseString);
-                            return $"ERROR: API call failed with status {response.StatusCode}. Please check the console for details.";
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"API Call Error: {ex.Message}");
-                        return $"ERROR: Exception during API call: {ex.Message}";
-                    }
-                }
+                return await GetOllamaResponse(context.ToString());
             }
             catch (Exception e)
             {
-                return $"ERROR: General exception: {e.Message}";
+                return $"ERROR: {e.Message}";
+            }
+        }
+
+        private async Task<string> GetOllamaResponse(string context)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                var requestData = new
+                {
+                    model = _ollamaModel,
+                    prompt = $"{context}\n\nWhat should I do?",
+                    stream = false,
+                    options = new
+                    {
+                        temperature = 0.7,
+                        num_predict = 150
+                    }
+                };
+
+                var jsonContent = new StringContent(
+                    JsonSerializer.Serialize(requestData),
+                    Encoding.UTF8,
+                    "application/json");
+
+                try
+                {
+                    
+                    var response = await httpClient.PostAsync(_ollamaEndpoint, jsonContent);
+                    var responseString = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(responseString))
+                    {
+                        
+                        using (JsonDocument doc = JsonDocument.Parse(responseString))
+                        {
+                            JsonElement root = doc.RootElement;
+
+                            if (root.TryGetProperty("response", out JsonElement responseElement))
+                            {
+                                string? aiResponse = responseElement.GetString();
+                                return aiResponse ?? "I'm not sure what to suggest right now.";
+                            }
+
+                            return "I couldn't interpret the response correctly.";
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Ollama API Error: {response.StatusCode}");
+                        Console.WriteLine(responseString);
+
+                        if (responseString.Contains("connection refused"))
+                        {
+                            return "ERROR: Connection to Ollama refused. Make sure the Docker container is running.";
+                        }
+                        else if (responseString.Contains("model not found"))
+                        {
+                            return $"ERROR: The model '{_ollamaModel}' is not available. Pull the model using 'ollama pull {_ollamaModel}' first.";
+                        }
+
+                        return $"ERROR: Ollama API call failed with status {response.StatusCode}.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ollama API Call Error: {ex.Message}");
+
+                    if (ex.Message.Contains("No connection could be made because the target machine actively refused it"))
+                    {
+                        return "ERROR: Cannot connect to Ollama. Make sure the Docker container is running on port 11434.";
+                    }
+
+                    return $"ERROR: {ex.Message}";
+                }
             }
         }
     }

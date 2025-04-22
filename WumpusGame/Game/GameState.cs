@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using WumpusAdventure.Helpers;
 using WumpusAdventure.Models;
 
 namespace WumpusAdventure.Game
@@ -85,26 +84,31 @@ namespace WumpusAdventure.Game
         {
             try
             {
-                string configuredMapPath = "GameMap.json"; 
-
-                var config = ConfigurationHelper.ReadConfiguration();
-                if (config?.Paths?.GameMap != null)
+                string mapPath = "GameMap.json";
+                
+                string fullPath = Path.Combine(AppContext.BaseDirectory, mapPath);
+                
+                Console.WriteLine($"Looking for map at: {fullPath}");
+                
+                if (!File.Exists(fullPath))
                 {
-                    configuredMapPath = config.Paths.GameMap;
-                }
-
-                string fullPath = configuredMapPath;
-
-                if (!Path.IsPathRooted(configuredMapPath) && !File.Exists(fullPath))
-                {
-                    fullPath = Path.Combine(AppContext.BaseDirectory, configuredMapPath);
+                    fullPath = Path.Combine(Directory.GetCurrentDirectory(), mapPath);
+                    Console.WriteLine($"Not found. Trying: {fullPath}");
+                    
+                    if (!File.Exists(fullPath))
+                    {
+                        string projectDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+                        fullPath = Path.Combine(projectDir, mapPath);
+                        Console.WriteLine($"Not found. Trying project directory: {fullPath}");
+                    }
                 }
 
                 if (!File.Exists(fullPath))
                 {
-                    throw new FileNotFoundException($"Map file '{configuredMapPath}' not found at path: {fullPath}");
+                    throw new FileNotFoundException($"Map file '{mapPath}' not found. Last attempted path: {fullPath}");
                 }
 
+                Console.WriteLine($"Found map at: {fullPath}");
                 string jsonContent = File.ReadAllText(fullPath);
                 var mapConfig = JsonSerializer.Deserialize<GameMapConfig>(jsonContent);
 
@@ -121,7 +125,7 @@ namespace WumpusAdventure.Game
             {
                 Console.WriteLine($"FATAL ERROR: Failed to load map: {ex.Message}");
                 Console.WriteLine("Please ensure the map file exists and has the correct format.");
-                throw;
+                throw; 
             }
         }
 

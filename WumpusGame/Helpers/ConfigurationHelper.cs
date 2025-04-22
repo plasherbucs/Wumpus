@@ -10,15 +10,32 @@ namespace WumpusAdventure.Helpers
         {
             try
             {
-                string configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+                string[] possiblePaths = new string[]
+                {
+                    "appsettings.json",
+                    Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json")
+                };
 
-                if (File.Exists(configPath))
+                string? configPath = null;
+                foreach (var path in possiblePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        configPath = path;
+                        break;
+                    }
+                }
+
+                if (configPath != null)
                 {
                     string jsonContent = File.ReadAllText(configPath);
                     return JsonSerializer.Deserialize<ApiConfiguration>(jsonContent);
                 }
                 else
                 {
+                    Console.WriteLine("Warning: Configuration file not found in any of the expected locations.");
                     return null;
                 }
             }
@@ -29,19 +46,21 @@ namespace WumpusAdventure.Helpers
             }
         }
     }
+
     public class ApiConfiguration
     {
-        public KeyStorage? Keys { get; set; }
         public PathStorage? Paths { get; set; }
-
-        public class KeyStorage
-        {
-            public string? OpenAI { get; set; }
-        }
+        public AISettingsStorage? AISettings { get; set; }
 
         public class PathStorage
         {
             public string? GameMap { get; set; }
+        }
+
+        public class AISettingsStorage
+        {
+            public string? Model { get; set; } = "llama3";
+            public string? Endpoint { get; set; } = "http://localhost:11434/api/generate";
         }
     }
 }
